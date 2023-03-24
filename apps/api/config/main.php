@@ -7,14 +7,31 @@ $params = array_merge(
 );
 
 return [
-    'id' => 'app-backend',
+    'id' => 'app-api',
     'basePath' => dirname(__DIR__),
-    'controllerNamespace' => 'backend\controllers',
+    'controllerNamespace' => 'api\controllers',
     'bootstrap' => ['log'],
     'modules' => [],
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
+        ],
+        'response' => [
+            'class' => 'yii\web\Response',
+            'on beforeSend' => function ($event) {
+                /** @var \yii\web\Response $response */
+                $response = $event->sender;
+                $response->data = [
+                    'success' => $response->isSuccessful,
+                    'code' => $response->getStatusCode(),
+                    'message' => $response->statusText,
+                    'data' => $response->data,
+                ];
+                $response->statusCode = 200;
+            },
         ],
         'user' => [
             'identityClass' => 'common\models\User',
@@ -37,14 +54,17 @@ return [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
+            'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'menu'
+                ]
             ],
         ],
-        */
     ],
     'params' => $params,
 ];
