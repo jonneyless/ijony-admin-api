@@ -2,8 +2,11 @@
 
 namespace api\models;
 
+use common\models\Model;
 use Yii;
 use yii\base\NotSupportedException;
+use yii\behaviors\TimestampBehavior;
+use yii\helpers\ArrayHelper;
 use yii\web\IdentityInterface;
 
 /**
@@ -26,6 +29,63 @@ class Admin extends \common\models\Admin implements IdentityInterface
     const STATUS_DELETED = 0;
     const STATUS_INACTIVE = 1;
     const STATUS_ACTIVE = 9;
+
+    public $password;
+
+    /**
+     * @return string[]
+     */
+    public function fields()
+    {
+        return ['id', 'username', 'nickname', 'avatar', 'auth_key'];
+    }
+
+    /**
+     * @return string[]
+     */
+    public function behaviors()
+    {
+        return [
+            TimestampBehavior::class
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function rules()
+    {
+        return ArrayHelper::merge(parent::rules(), [
+            ['username', 'unique'],
+            ['password', 'required', 'on' => Model::SCENARIO_CREATE],
+            ['password', 'string'],
+            ['status', 'default', 'value' => self::STATUS_ACTIVE],
+            ['status', 'in', 'range' => [self::STATUS_DELETED, self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
+        ]);
+    }
+
+    /**
+     * @param $insert
+     *
+     * @return bool
+     * @throws \yii\base\Exception
+     */
+    public function beforeSave($insert)
+    {
+        if ($this->password) {
+            $this->setPassword($this->password);
+        }
+
+        if ($insert) {
+            $this->generateAuthKey();
+        } else {
+            if ($this->isAttributeChanged('username')) {
+                $this->username = $this->getOldAttribute('username');
+            }
+        }
+
+        return parent::beforeSave($insert);
+    }
 
     /**
      * {@inheritdoc}

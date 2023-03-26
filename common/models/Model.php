@@ -10,6 +10,9 @@ use yii\db\ActiveRecord;
 class Model extends ActiveRecord
 {
 
+    const SCENARIO_CREATE = 'create';
+    const SCENARIO_UPDATE = 'update';
+
     /** @var array 可过滤字段 */
     protected static array $filterColumns = [];
 
@@ -60,5 +63,85 @@ class Model extends ActiveRecord
         }
 
         return static::$filterRules;
+    }
+
+    /**
+     * 装载数据
+     *
+     * @param $data
+     * @param $formName
+     *
+     * @return bool
+     */
+    public function load($data, $formName = null)
+    {
+        if (parent::load($data, $formName)) {
+            $this->afterLoad();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 数据后处理
+     *
+     * @return void
+     */
+    public function afterLoad()
+    {
+
+    }
+
+    /**
+     * 场景管理
+     *
+     * @return array[]
+     */
+    public function scenarios()
+    {
+        $scenarios = [self::SCENARIO_DEFAULT => [], self::SCENARIO_CREATE => [], self::SCENARIO_UPDATE => []];
+        foreach ($this->getValidators() as $validator) {
+            foreach ($validator->on as $scenario) {
+                $scenarios[$scenario] = [];
+            }
+            foreach ($validator->except as $scenario) {
+                $scenarios[$scenario] = [];
+            }
+        }
+        $names = array_keys($scenarios);
+
+        foreach ($this->getValidators() as $validator) {
+            if (empty($validator->on) && empty($validator->except)) {
+                foreach ($names as $name) {
+                    foreach ($validator->attributes as $attribute) {
+                        $scenarios[$name][$attribute] = true;
+                    }
+                }
+            } elseif (empty($validator->on)) {
+                foreach ($names as $name) {
+                    if (!in_array($name, $validator->except, true)) {
+                        foreach ($validator->attributes as $attribute) {
+                            $scenarios[$name][$attribute] = true;
+                        }
+                    }
+                }
+            } else {
+                foreach ($validator->on as $name) {
+                    foreach ($validator->attributes as $attribute) {
+                        $scenarios[$name][$attribute] = true;
+                    }
+                }
+            }
+        }
+
+        foreach ($scenarios as $scenario => $attributes) {
+            if (!empty($attributes)) {
+                $scenarios[$scenario] = array_keys($attributes);
+            }
+        }
+
+        return $scenarios;
     }
 }

@@ -6,7 +6,7 @@ use api\models\Menu;
 use Yii;
 
 /**
- * Site controller
+ * 菜单
  */
 class MenuController extends BaseController
 {

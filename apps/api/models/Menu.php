@@ -4,6 +4,7 @@ namespace api\models;
 
 use api\traits\ModelFilter;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Url;
 
 /**
  * This is the model class for table "menu".
@@ -24,12 +25,35 @@ use yii\helpers\ArrayHelper;
 class Menu extends \common\models\Menu
 {
 
-    const STATUS_DELETE = 0;    // 删除
+    const STATUS_DELETED = 0;    // 删除
     const STATUS_INACTIVE = 1;  // 禁用
     const STATUS_ACTIVE = 9;    // 启用
 
-    protected static array $filterColumns = ['id'];
-    protected static array $filterRules = [['id', 'integer']];
+    public function fields()
+    {
+        return [
+            'id',
+            'parent_id',
+            'name',
+            'icon',
+            'url' => function ($model) {
+                $param = [];
+                if ($model->controller) {
+                    $param[] = $model->controller . '/' . ($model->action ? : 'index');
+
+                    if ($model->params) {
+                        parse_str($model->params, $param);
+                    }
+                }
+
+                if (!$param) {
+                    return '';
+                }
+
+                return Url::to($param);
+            }
+        ];
+    }
 
     /**
      * @return array
@@ -39,7 +63,7 @@ class Menu extends \common\models\Menu
         return ArrayHelper::merge(parent::rules(), [
             [['child', 'parent_id', 'sort'], 'default', 'value' => 0],
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
-            ['status', 'in', 'range' => [self::STATUS_DELETE, self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
+            ['status', 'in', 'range' => [self::STATUS_DELETED, self::STATUS_INACTIVE, self::STATUS_ACTIVE]],
         ]);
     }
 

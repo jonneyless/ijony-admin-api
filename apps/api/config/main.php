@@ -1,4 +1,7 @@
 <?php
+
+use yii\log\FileTarget;
+
 $params = array_merge(
     require __DIR__ . '/../../../common/config/params.php',
     require __DIR__ . '/../../../common/config/params-local.php',
@@ -9,12 +12,13 @@ $params = array_merge(
 return [
     'id' => 'app-api',
     'basePath' => dirname(__DIR__),
+    'language' => 'zh-cn',
     'controllerNamespace' => 'api\controllers',
     'bootstrap' => ['log'],
     'modules' => [],
     'components' => [
         'request' => [
-            'csrfParam' => '_csrf-backend',
+            'csrfParam' => '_csrf',
             'parsers' => [
                 'application/json' => 'yii\web\JsonParser',
             ],
@@ -22,21 +26,14 @@ return [
         'response' => [
             'class' => 'yii\web\Response',
             'on beforeSend' => function ($event) {
-                /** @var \yii\web\Response $response */
                 $response = $event->sender;
-                $response->data = [
-                    'success' => $response->isSuccessful,
-                    'code' => $response->getStatusCode(),
-                    'message' => $response->statusText,
-                    'data' => $response->data,
-                ];
-                $response->statusCode = 200;
+
+                parseResponseData($response);
             },
         ],
         'user' => [
             'identityClass' => 'common\models\User',
-            'enableAutoLogin' => true,
-            'identityCookie' => ['name' => '_identity-backend', 'httpOnly' => true],
+            'enableAutoLogin' => false,
         ],
         'session' => [
             // this is the name of the session cookie used for login on the backend
@@ -46,7 +43,7 @@ return [
             'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
                 [
-                    'class' => \yii\log\FileTarget::class,
+                    'class' => FileTarget::class,
                     'levels' => ['error', 'warning'],
                 ],
             ],
@@ -61,7 +58,7 @@ return [
             'rules' => [
                 [
                     'class' => 'yii\rest\UrlRule',
-                    'controller' => 'menu'
+                    'controller' => ['menu', 'admin']
                 ]
             ],
         ],

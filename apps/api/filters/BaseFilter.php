@@ -61,7 +61,7 @@ class BaseFilter extends ActiveDataFilter
 
     /**
      * 兼容方法
-     * @return array
+     * @return Pagination
      */
     public function getPagination()
     {

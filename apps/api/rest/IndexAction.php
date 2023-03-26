@@ -11,16 +11,14 @@ class IndexAction extends \yii\rest\IndexAction
 {
 
     /**
-     * @return array
+     * @return array|\yii\data\ActiveDataProvider|\yii\data\DataFilter|null
      */
     public function prepareDataProvider()
     {
         $provider = parent::prepareDataProvider();
 
         if ($provider instanceof DataFilter) {
-            return [
-                'errors' => $provider->getErrors(),
-            ];
+            return $provider;
         }
 
         $models = $provider->getModels();
